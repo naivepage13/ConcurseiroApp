@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data: blob:; connect-src 'self' https://*.supabase.co; worker-src 'self' blob:; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#1f4e8c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Estudo PMSC 2026 — Simulados</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <a class="brand" href="#/"><span class="logo">PM</span><span>Estudo PMSC<small id="countdown"></small></span></a>
+    <nav id="nav">
+      <a href="#/" data-r="home"><i>🏠</i><span>Início</span></a>
+      <a href="#/praticar" data-r="praticar"><i>✏️</i><span>Praticar</span></a>
+      <a href="#/relatorio" data-r="relatorio"><i>📊</i><span>Relatório</span></a>
+      <a href="#/banco" data-r="banco"><i>📚</i><span>Banco</span></a>
+      <a href="#/conta" data-r="conta"><i>👤</i><span>Conta</span></a>
+    </nav>
+  </div>
+</header>
+<main id="app" class="wrap" aria-live="polite"></main>
+<div id="toast" class="toast" role="status"></div>
+<script src="config.js"></script>
+<script src="data/bank.js"></script>
+<script src="data/pos.js"></script>
+<script src="js/explain.js"></script>
+<script src="js/pdfimport.js"></script>
+<script src="js/progresspdf.js"></script>
+<script src="js/app.js" defer></script>
+</body>
+</html>

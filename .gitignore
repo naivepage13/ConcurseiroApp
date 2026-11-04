@@ -1,0 +1,21 @@
+# ---- Nunca vão para o GitHub ----
+# Banco de questões (material protegido por direitos autorais): fica só no seu computador e na nuvem (login)
+data/bank.js
+data/bank.json
+private/
+# PDFs de simulados, relatórios e qualquer documento pessoal
+*.pdf
+# Segredos e chaves
+.env
+.env.*
+*.pem
+*.key
+*.p12
+secrets*
+config.local.js
+# Lixo de sistema/ferramentas
+node_modules/
+*.log
+.DS_Store
+Thumbs.db
+_test/

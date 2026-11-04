@@ -1,0 +1,4 @@
+#!/bin/sh
+# Bloqueia o commit se houver segredo, dado pessoal ou arquivo proibido (veja tools/check-secrets.mjs).
+# Ative uma vez, dentro da pasta do site:   git config core.hooksPath tools/hooks
+node tools/check-secrets.mjs --staged || { echo "Commit bloqueado pela verificação de segurança."; exit 1; }
