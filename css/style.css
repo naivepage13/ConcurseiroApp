@@ -3,10 +3,15 @@
   --ok:#157347;--ok-bg:#e3f4ea;--bad:#b3261e;--bad-bg:#fbe7e5;--warn:#9a6700;--warn-bg:#fff4d6;--chip:#eaf0fa;
   --shadow:0 1px 2px rgba(20,30,50,.06),0 4px 14px rgba(20,30,50,.05);
 }
+/* Tema: automático (segue o aparelho), claro ou escuro (escolhido em Conta > Aparência, guardado em data-theme no <html>) */
+:root{color-scheme:light}
 @media (prefers-color-scheme:dark){
-  :root{--bg:#10151d;--card:#1a212c;--ink:#e8edf5;--mut:#9aa6ba;--line:#2b3544;--pri:#5b94e0;--pri-ink:#0c1522;
-  --ok:#5fd18b;--ok-bg:#16301f;--bad:#ff8a80;--bad-bg:#3a1b19;--warn:#f0c15a;--warn-bg:#352b10;--chip:#243044;--shadow:none}
+  :root:not([data-theme="light"]){--bg:#10151d;--card:#1a212c;--ink:#e8edf5;--mut:#9aa6ba;--line:#2b3544;--pri:#5b94e0;--pri-ink:#0c1522;
+  --ok:#5fd18b;--ok-bg:#16301f;--bad:#ff8a80;--bad-bg:#3a1b19;--warn:#f0c15a;--warn-bg:#352b10;--chip:#243044;--shadow:none;color-scheme:dark}
 }
+:root[data-theme="dark"]{--bg:#10151d;--card:#1a212c;--ink:#e8edf5;--mut:#9aa6ba;--line:#2b3544;--pri:#5b94e0;--pri-ink:#0c1522;
+  --ok:#5fd18b;--ok-bg:#16301f;--bad:#ff8a80;--bad-bg:#3a1b19;--warn:#f0c15a;--warn-bg:#352b10;--chip:#243044;--shadow:none;color-scheme:dark}
+:root[data-theme="light"]{color-scheme:light}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
@@ -101,4 +106,6 @@ body.gate nav{display:none}
 .study{margin-top:14px;background:var(--card);border:1.5px dashed var(--pri);border-radius:11px;padding:12px 14px}
 .study .t{font-weight:800;margin-bottom:4px;color:var(--pri)}
 .fb ul{margin:6px 0;padding-left:20px}
-@media print{.top,.btn,nav,.noprint{display:none!important}body{background:#fff;color:#000}.card{box-shadow:none;break-inside:avoid}}
+@media print{:root,:root[data-theme="dark"]{--bg:#fff;--card:#fff;--ink:#000;--mut:#444;--line:#ccc;--chip:#eee;color-scheme:light}.top,.btn,nav,.noprint{display:none!important}body{background:#fff;color:#000}.card{box-shadow:none;break-inside:avoid}}
+
+.theme-opts .chip{padding:8px 16px;font-size:14.5px}

@@ -614,15 +614,22 @@ function viewBank() {
   </div>`;
 }
 
+function themeCard() {
+  const cur = (window.PMTheme && PMTheme.get()) || 'auto';
+  const opt = (v, l) => `<button type="button" class="chip ${cur === v ? 'sel' : ''}" data-act="theme" data-v="${v}" aria-pressed="${cur === v}">${l}</button>`;
+  return `<div class="card"><h3>Aparência</h3><p class="small mut" style="margin-top:0">Escolha o tema do aplicativo. Fica salvo neste aparelho.</p>
+    <div class="theme-opts">${opt('light', '☀️ Claro')}${opt('dark', '🌙 Escuro')}${opt('auto', '🖥️ Automático (igual ao aparelho)')}</div></div>`;
+}
 async function viewAccount() {
   setNav('conta');
   if (!Cloud.enabled) {
-    $app.innerHTML = `<h1>Conta</h1><div class="notice">Modo <b>local</b>: seu progresso fica salvo só neste aparelho. Quando o app for publicado com o banco de dados, cada pessoa terá usuário e senha próprios e o progresso ficará salvo por pessoa.</div>`;
+    $app.innerHTML = `<h1>Conta</h1>${themeCard()}<div class="notice">Modo <b>local</b>: seu progresso fica salvo só neste aparelho. Quando o app for publicado com o banco de dados, cada pessoa terá usuário e senha próprios e o progresso ficará salvo por pessoa.</div>`;
     return;
   }
   let nick = ''; try { const me = await Cloud.rpc('app_me', { p_token: Cloud.token }); nick = strOf(me && me.display_name, 24); Cloud.setDisplay(nick); } catch (e) { /* sem internet: mostra vazio */ }
   $app.innerHTML = `<h1>Minha conta</h1><div class="card"><p>Usuário de login (só você vê): <b>${esc(Cloud.username)}</b><br><span class="small mut">${esc(Cloud.status)}</span></p>
     <div class="row"><button class="btn" data-act="sync">Sincronizar agora</button><button class="btn" data-act="logout">Sair</button></div></div>
+    ${themeCard()}
     <form class="card" data-form="nick"><h3>Seu apelido no ranking</h3>
       <p class="small mut" style="margin-top:0">É o <b>único nome que as outras pessoas veem</b>. Pode ser qualquer um (2 a 24 caracteres), sem relação com o seu usuário de login, que nunca aparece para ninguém.</p>
       <label class="f" for="nk">Apelido</label><input id="nk" type="text" maxlength="24" minlength="2" value="${esc(nick)}" autocomplete="off" required>
@@ -716,6 +723,7 @@ $app.addEventListener('click', async e => {
   const el = e.target.closest('[data-act]'); if (!el || el.tagName === 'SELECT' || el.tagName === 'INPUT') return;
   const a = el.dataset.act, v = el.dataset.v;
   switch (a) {
+    case 'theme': PMTheme.set(v); route(); break;
     case 'mix-all': startFromFilters({ ...DEF_FILTERS(), count: 0 }, 'Todas as questões (misturadas)'); break;
     case 'mix-new': startFromFilters({ ...DEF_FILTERS(), count: 0, status: 'new' }, 'Questões inéditas'); break;
     case 'mock': examMock(); break;

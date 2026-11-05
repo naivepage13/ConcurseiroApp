@@ -7,6 +7,7 @@ App web (HTML/CSS/JS puro, sem build) que funciona no **celular e no computador*
 - **Ao errar:** mostra sua alternativa, a correta (com a citação do texto), a base legal, **por que cada alternativa errada está errada** e uma caixa **"O que estudar"** com a norma e os artigos citados.
 - **Relatório:** acertos × erros, pontos fortes e fracos, "o que estudar primeiro", evolução e **histórico de relatórios com data e hora**, comparando um relatório com o outro.
 - **Banco:** só aceita **PDF** (Rota Sul; ou VIP Preparatório = caderno + gabarito comentado, selecionados juntos). **Cada pessoa vê apenas os simulados que ela mesma adicionou** — nada é compartilhado entre usuários.
+- **Aparência:** em **Conta**, tema claro, escuro ou automático (segue o aparelho), salvo em cada aparelho.
 - **Meu progresso (PDF):** exporta um PDF com o relatório completo; o mesmo PDF pode ser importado de volta.
 - **Contas:** usuário + senha (sem e-mail), cadastro só com o **código de convite**; cada pessoa só enxerga o próprio progresso e os próprios simulados (sincronizados entre os aparelhos dela). Há um **ranking** que mostra apenas o **apelido** (escolhido por cada pessoa, sem relação com o usuário de login) e quantos simulados ela já fez (nada de acertos ou erros).
 
