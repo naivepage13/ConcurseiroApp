@@ -370,7 +370,9 @@ function viewHome() {
       <a class="btn pri" href="#/praticar">Montar minha prática</a></div>
   </div>
   ${tot ? `<h2>Seu desempenho por disciplina</h2><div class="card">${BANK.disciplinas.filter(d => byD.get(d)).map(d => { const s = byD.get(d); return `<div style="margin:8px 0"><div class="row" style="justify-content:space-between"><span>${esc(d)}</span><span class="small mut">${s.a}/${s.t} · <b>${fmtPct(pct(s.a, s.t))}</b></span></div><div class="bar ${barCls(s.t, s.a)}"><i style="width:${pct(s.a, s.t)}%"></i></div></div>`; }).join('')}
-    <a class="btn" href="#/relatorio">Ver relatório completo</a></div>` : ''}`;
+    <a class="btn" href="#/relatorio">Ver relatório completo</a></div>` : ''}
+  ${Cloud.token && window.Comunidade ? '<div id="cm-home"></div>' : ''}`;
+  if (Cloud.token && window.Comunidade) window.Comunidade.mountHome();
 }
 
 const QTY = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
@@ -651,9 +653,10 @@ function route() {
   if (Cloud.enabled && !Cloud.username) { viewLogin(); return; }
   document.body.classList.remove('gate');
   const r = (location.hash || '#/').replace(/^#\/?/, '').split('?')[0];
-  ({ '': viewHome, praticar: viewPractice, questao: viewQuestion, resultado: viewResult, relatorio: viewReport, banco: viewBank, conta: viewAccount }[r] || viewHome)();
+  ({ '': viewHome, praticar: viewPractice, questao: viewQuestion, resultado: viewResult, relatorio: viewReport, banco: viewBank, conta: viewAccount, comunidade: () => (window.Comunidade && Cloud.token ?window.Comunidade.viewPortal() : viewHome()) }[r] || viewHome)();
   if (r !== 'questao') window.scrollTo({ top: 0 });
 }
+window.PMCtx = { Cloud, esc, toast, setNav, app: $app };   // contexto para js/comunidade.js
 window.addEventListener('hashchange', route);
 
 /* ---------- eventos ---------- */

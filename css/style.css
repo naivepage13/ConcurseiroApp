@@ -81,7 +81,7 @@ label.f{display:block;font-weight:600;margin:10px 0 4px;font-size:14px}
   .wrap{padding:12px 12px 90px}.card{padding:14px}.stem{font-size:16px}.bigpct{font-size:44px}
   h1{font-size:21px}
   .top-in{padding:8px 12px}
-  nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:4px 4px calc(4px + env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(5,1fr);gap:0;z-index:20}
+  nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:4px 4px calc(4px + env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(6,1fr);gap:0;z-index:20}
   nav a{flex-direction:column;gap:0;padding:6px 2px;font-size:11.5px;text-align:center;border-radius:10px}
   nav a i{font-size:20px;line-height:1.2}
   .toast{bottom:84px}
@@ -109,3 +109,40 @@ body.gate nav{display:none}
 @media print{:root,:root[data-theme="dark"]{--bg:#fff;--card:#fff;--ink:#000;--mut:#444;--line:#ccc;--chip:#eee;color-scheme:light}.top,.btn,nav,.noprint{display:none!important}body{background:#fff;color:#000}.card{box-shadow:none;break-inside:avoid}}
 
 .theme-opts .chip{padding:8px 16px;font-size:14.5px}
+
+/* ---------- Comunidade ---------- */
+.cm-svg{width:1em;height:1em;vertical-align:-.14em;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.cm-hhead{justify-content:space-between;margin-top:6px}.cm-hhead h2{margin:18px 0 0}
+.cm-all{font-weight:600;text-decoration:none}
+.cm-chips{margin-bottom:4px;gap:6px}
+.cm-post{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line);align-items:flex-start}
+.cm-chips+.cm-post,.cm-list>.cm-post:first-child{border-top:0}
+.cm-ico{flex:0 0 40px;height:40px;border-radius:10px;display:grid;place-items:center;font-size:20px}
+.cm-ico.v{background:var(--bad-bg);color:var(--bad)}.cm-ico.p{background:var(--ok-bg);color:var(--ok)}.cm-ico.s{background:var(--chip);color:var(--pri)}.cm-ico.r{background:var(--warn-bg);color:var(--warn)}
+.cm-main{flex:1;min-width:0}
+.cm-main h4{margin:0;font-size:15.5px;line-height:1.35;overflow-wrap:anywhere}
+.cm-main h4 a{color:var(--ink);text-decoration:none}.cm-main h4 a:hover{color:var(--pri);text-decoration:underline}
+.cm-meta{font-size:13px;color:var(--mut);margin-top:2px}
+.cm-tag{display:inline-block;font-size:11.5px;font-weight:700;border-radius:6px;padding:1px 7px;background:var(--chip);color:var(--mut);margin-right:6px}
+.cm-desc{margin:4px 0 0;font-size:14px;color:var(--mut);overflow-wrap:anywhere}
+.cm-acts{margin-top:4px;display:flex;gap:14px}
+.cm-lnk{border:0;background:none;padding:2px 0;font:inherit;font-size:13px;font-weight:600;color:var(--pri);cursor:pointer}
+.cm-lnk:hover{text-decoration:underline}
+.cm-vote{margin-left:auto;flex:0 0 52px;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:5px 2px;font:inherit;font-size:11.5px;color:var(--mut);cursor:pointer;text-align:center;line-height:1.2}
+.cm-vote b{display:block;font-size:16px;color:var(--ink)}
+.cm-vote:hover:not([disabled]){border-color:var(--pri)}
+.cm-vote.on{background:var(--chip);border-color:var(--pri);color:var(--pri)}.cm-vote.on b{color:var(--pri)}
+.cm-vote[disabled]{cursor:default;opacity:.75}
+.cm-note{background:var(--warn-bg);border:1px solid var(--warn);border-radius:10px;padding:10px 12px;font-size:14px;margin:8px 0 6px;overflow-wrap:anywhere}
+.cm-empty{color:var(--mut);font-size:14.5px;padding:14px 4px;text-align:center}
+.cm-top{justify-content:space-between;margin-bottom:10px}
+.cm-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}
+.cm-tabs .chip{margin:0}
+.cm-sort{gap:6px;margin-bottom:10px}.cm-sort .chip{margin:0}
+.cm-list{padding-top:6px;padding-bottom:6px}
+.cm-nrow .cm-nbody{white-space:pre-line;margin-top:6px;font-size:15px;overflow-wrap:anywhere}
+.cm-nrow{margin-bottom:10px}
+@media (max-width:640px){.cm-vote{flex-basis:46px}.cm-post{gap:10px}.cm-ico{flex-basis:36px;height:36px}}
+.cm-mode{display:flex;gap:18px;margin:6px 0 2px}.cm-mode label{display:flex;gap:6px;align-items:center;font-weight:600;font-size:14.5px;cursor:pointer}
+.cm-tag.cm-pdf{background:var(--ok-bg);color:var(--ok)}
+input[type=file]{width:100%;padding:8px;border:1px dashed var(--line);border-radius:9px;background:var(--card);color:var(--ink);font:inherit}
