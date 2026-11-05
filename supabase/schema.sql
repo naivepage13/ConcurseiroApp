@@ -19,10 +19,12 @@ create table if not exists app_private.users (
   id uuid primary key default gen_random_uuid(),
   username text not null unique check (username ~ '^[a-z0-9_.-]{3,20}$'),
   pass_hash text not null,
+  display_name text,                       -- apelido mostrado no ranking (sem relação com o usuário de login)
   fails int not null default 0,
   locked_until timestamptz,
   created_at timestamptz not null default now()
 );
+create unique index if not exists users_display_name_uq on app_private.users (lower(display_name));
 create table if not exists app_private.sessions (
   token_hash text primary key,
   user_id uuid not null references app_private.users(id) on delete cascade,
@@ -90,7 +92,7 @@ end $$;
 -- ---------- cadastro / login ----------
 create or replace function public.app_register(p_username text, p_password text, p_invite text) returns json
 language plpgsql security definer set search_path = app_private, extensions as $$
-declare u text := lower(trim(p_username)); new_id uuid; ih text; th app_private.throttle; maxu int := 500;
+declare u text := lower(trim(p_username)); new_id uuid; ih text; th app_private.throttle; maxu int := 500; dn text;
 begin
   -- Fechado por padrão: sem código de convite cadastrado, ninguém se cadastra.
   select value into ih from app_private.settings where key = 'invite_hash';
@@ -110,8 +112,12 @@ begin
   if length(coalesce(p_password, '')) < 8 or length(p_password) > 72 then return json_build_object('error', 'A senha precisa ter de 8 a 72 caracteres.'); end if;
   if lower(p_password) = u then return json_build_object('error', 'A senha não pode ser igual ao nome de usuário.'); end if;
   if (select count(*) from app_private.users) >= maxu then return json_build_object('error', 'Limite de usuários atingido.'); end if;
+  loop   -- apelido inicial aleatório: não tem relação nenhuma com o usuário de login (a pessoa pode trocar)
+    dn := 'Estudante-' || substr(md5(random()::text || clock_timestamp()::text), 1, 6);
+    exit when not exists (select 1 from app_private.users where lower(display_name) = lower(dn));
+  end loop;
   begin
-    insert into app_private.users(username, pass_hash) values (u, crypt(p_password, gen_salt('bf', 10))) returning id into new_id;
+    insert into app_private.users(username, pass_hash, display_name) values (u, crypt(p_password, gen_salt('bf', 10)), dn) returning id into new_id;
   exception when unique_violation then
     return json_build_object('error', 'Esse nome de usuário já existe. Escolha outro.');
   end;
@@ -147,7 +153,7 @@ declare r app_private.users;
 begin
   select u.* into r from app_private.users u where u.id = app_private.uid(p_token);
   if not found then raise exception 'Sessão expirada. Entre novamente.'; end if;
-  return json_build_object('username', r.username);
+  return json_build_object('username', r.username, 'display_name', r.display_name);
 end $$;
 
 create or replace function public.app_logout(p_token text) returns void
@@ -270,20 +276,39 @@ begin
   on conflict (user_id) do update set simulados = greatest(app_private.stats.simulados, excluded.simulados);
 end $$;
 
-drop function if exists public.app_leaderboard(text);
-create or replace function public.app_leaderboard(p_token text)
-returns table(name text, simulados int)
+-- Apelido do ranking: qualquer nome (2 a 24 caracteres), sem relação com o usuário de login.
+-- O usuário de login NUNCA aparece para outras pessoas (assim ninguém sabe qual conta tentar travar).
+create or replace function public.app_set_display_name(p_token text, p_name text) returns json
 language plpgsql security definer set search_path = app_private, extensions as $$
+declare uid uuid := app_private.uid(p_token); n text := btrim(regexp_replace(coalesce(p_name, ''), '\s+', ' ', 'g')); me text;
 begin
-  if app_private.uid(p_token) is null then raise exception 'Sessão expirada. Entre novamente.'; end if;
-  return query
-    select u.username, s.simulados
-    from app_private.stats s join app_private.users u on u.id = s.user_id
-    where s.simulados > 0
-    order by s.simulados desc, u.username limit 100;
+  if uid is null then raise exception 'Sessão expirada. Entre novamente.'; end if;
+  if char_length(n) < 2 or char_length(n) > 24 then raise exception 'O apelido precisa ter de 2 a 24 caracteres.'; end if;
+  if n !~ '^[A-Za-zÀ-ÖØ-öø-ÿ0-9 ._-]+$' then raise exception 'Use só letras, números, espaço, ponto, traço ou _ no apelido.'; end if;
+  select username into me from app_private.users where id = uid;
+  if lower(n) = lower(me) then raise exception 'Escolha um apelido diferente do seu usuário de login.'; end if;
+  begin
+    update app_private.users set display_name = n where id = uid;
+  exception when unique_violation then
+    raise exception 'Esse apelido já está em uso no ranking. Escolha outro.';
+  end;
+  return json_build_object('display_name', n);
 end $$;
 
--- ---------- permissões: o app (chave anon) só pode chamar as funções app_* ----------
+drop function if exists public.app_leaderboard(text);
+create or replace function public.app_leaderboard(p_token text)
+returns table(name text, simulados int, eu boolean)
+language plpgsql security definer set search_path = app_private, extensions as $$
+declare uid uuid := app_private.uid(p_token);
+begin
+  if uid is null then raise exception 'Sessão expirada. Entre novamente.'; end if;
+  return query
+    select u.display_name, s.simulados, (u.id = uid)
+    from app_private.stats s join app_private.users u on u.id = s.user_id
+    where s.simulados > 0
+    order by s.simulados desc, u.display_name limit 100;
+end $$;
+
 revoke all on all tables    in schema public from anon, authenticated;
 revoke all on all functions in schema public from public, anon, authenticated;
 revoke all on all functions in schema app_private from public, anon, authenticated;
@@ -291,7 +316,7 @@ grant execute on function
   public.app_register(text,text,text), public.app_login(text,text), public.app_me(text), public.app_logout(text),
   public.app_change_password(text,text,text), public.app_push_answers(text,jsonb), public.app_pull_answers(text,bigint,int),
   public.app_list_sims(text), public.app_get_sim(text,text), public.app_add_sim(text,text,text,text,jsonb),
-  public.app_delete_sim(text,text), public.app_leaderboard(text), public.app_set_simulados(text,int)
+  public.app_delete_sim(text,text), public.app_leaderboard(text), public.app_set_simulados(text,int), public.app_set_display_name(text,text)
 to anon, authenticated;
 
 -- =====================================================================================

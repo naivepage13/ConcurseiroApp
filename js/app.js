@@ -59,7 +59,7 @@ const SECRET_KEY_FOUND = keyIsSecret(CFG.SUPABASE_ANON_KEY);
 if (SECRET_KEY_FOUND) { CFG.SUPABASE_ANON_KEY = ''; }
 const Cloud = {
   enabled: !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY && /^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i.test(CFG.SUPABASE_URL)),
-  token: rawGet('pm_token'), username: rawGet('pm_user'), status: '',
+  token: rawGet('pm_token'), username: rawGet('pm_user'), display: rawGet('pm_display'), status: '',
   async rpc(fn, args) {
     let r;
     try {
@@ -70,18 +70,19 @@ const Cloud = {
     return j;
   },
   setSession(j) { this.token = j.token; this.username = j.username; rawSet('pm_token', j.token); rawSet('pm_user', j.username); },
-  clear() { this.token = null; this.username = null; rawSet('pm_token', null); rawSet('pm_user', null); },
+  clear() { this.token = null; this.username = null; this.display = null; rawSet('pm_token', null); rawSet('pm_user', null); rawSet('pm_display', null); },
+  setDisplay(n) { this.display = strOf(n, 24) || null; rawSet('pm_display', this.display); },
   async register(u, p, invite) { const j = await this.rpc('app_register', { p_username: u, p_password: p, p_invite: invite }); if (j && j.error) throw new Error(j.error); this.setSession(j); },
   async login(u, p) { const j = await this.rpc('app_login', { p_username: u, p_password: p }); if (j && j.error) throw new Error(j.error); this.setSession(j); },
   async logout() { try { await this.rpc('app_logout', { p_token: this.token }); } catch (e) { /* ok */ } this.clear(); },
   async checkSession() {
     if (!this.token) return;
-    try { const j = await this.rpc('app_me', { p_token: this.token }); this.username = j.username; rawSet('pm_user', j.username); }
+    try { const j = await this.rpc('app_me', { p_token: this.token }); this.username = j.username; rawSet('pm_user', j.username); this.setDisplay(j.display_name); }
     catch (e) { if (e.expired) this.clear(); }
   },
   async sync() {
     if (!this.token) return;
-    try { await this.pullSims(); await this.pullAnswers(); await this.pushPending(); await reportSimulados(); this.status = 'Sincronizado às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + '.'; }
+    try { try { const me = await this.rpc('app_me', { p_token: this.token }); this.setDisplay(me && me.display_name); } catch (e2) { if (e2.expired) throw e2; } await this.pullSims(); await this.pullAnswers(); await this.pushPending(); await reportSimulados(); this.status = 'Sincronizado às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + '.'; }
     catch (e) { this.status = e.offline ? 'Sem internet — seu progresso está salvo neste aparelho e será enviado depois.' : 'Falha ao sincronizar: ' + e.message; if (e.expired) { this.clear(); route(); } }
   },
   async pushAnswer(a) { if (!this.token) return; try { await this.rpc('app_push_answers', { p_token: this.token, p_rows: [{ qid: a.qid, chosen: a.chosen, ok: a.ok, ts: a.ts }] }); a.synced = true; saveAnswers(); } catch (e) { /* fica pendente */ } },
@@ -142,7 +143,7 @@ function loadState() {
 const saveAnswers = () => LS.set('answers', answers);
 const saveFilters = () => LS.set('filters', filters);
 const saveSession = () => LS.set('session', session);
-const who = () => Cloud.username || 'Aluno';
+const who = () => Cloud.display || 'Aluno';   // nome que sai em PDFs: o apelido (o usuário de login não deve circular)
 
 function buildBank() {
   const sims = SEED.sims.map(s => ({ ...s, origem: 'base' }))
@@ -619,15 +620,20 @@ async function viewAccount() {
     $app.innerHTML = `<h1>Conta</h1><div class="notice">Modo <b>local</b>: seu progresso fica salvo só neste aparelho. Quando o app for publicado com o banco de dados, cada pessoa terá usuário e senha próprios e o progresso ficará salvo por pessoa.</div>`;
     return;
   }
-  $app.innerHTML = `<h1>Minha conta</h1><div class="card"><p>Usuário: <b>${esc(Cloud.username)}</b><br><span class="small mut">${esc(Cloud.status)}</span></p>
+  let nick = ''; try { const me = await Cloud.rpc('app_me', { p_token: Cloud.token }); nick = strOf(me && me.display_name, 24); Cloud.setDisplay(nick); } catch (e) { /* sem internet: mostra vazio */ }
+  $app.innerHTML = `<h1>Minha conta</h1><div class="card"><p>Usuário de login (só você vê): <b>${esc(Cloud.username)}</b><br><span class="small mut">${esc(Cloud.status)}</span></p>
     <div class="row"><button class="btn" data-act="sync">Sincronizar agora</button><button class="btn" data-act="logout">Sair</button></div></div>
+    <form class="card" data-form="nick"><h3>Seu apelido no ranking</h3>
+      <p class="small mut" style="margin-top:0">É o <b>único nome que as outras pessoas veem</b>. Pode ser qualquer um (2 a 24 caracteres), sem relação com o seu usuário de login, que nunca aparece para ninguém.</p>
+      <label class="f" for="nk">Apelido</label><input id="nk" type="text" maxlength="24" minlength="2" value="${esc(nick)}" autocomplete="off" required>
+      <div style="margin-top:10px"><button class="btn" type="submit">Salvar apelido</button></div></form>
     <form class="card" data-form="chpw"><h3>Trocar senha</h3><label class="f" for="op">Senha atual</label><input id="op" type="password" autocomplete="current-password" required>
       <label class="f" for="np">Nova senha (mínimo 8)</label><input id="np" type="password" autocomplete="new-password" minlength="8" required><div style="margin-top:10px"><button class="btn" type="submit">Trocar senha</button></div></form>
     <h2>Ranking de simulados feitos</h2><div class="card" id="lb">Carregando…</div>`;
   try {
     const rows = await Cloud.leaderboard(); const el = document.getElementById('lb'); if (!el) return;
     const mine = simuladosFeitos();
-    el.innerHTML = `<p style="margin-top:0">Você já fez <b>${mine}</b> simulado(s).</p>` + (rows.length ? `<table><tr><th>#</th><th>Usuário</th><th class="n">Simulados feitos</th></tr>${rows.map((r, i) => `<tr${r.name === Cloud.username ? ' style="font-weight:700"' : ''}><td>${i + 1}</td><td>${esc(r.name)}</td><td class="n">${esc(r.simulados)}</td></tr>`).join('')}</table>` : '<span class="mut">Ninguém terminou um simulado ainda.</span>') + '<p class="small mut">Conta como feito o simulado em que você respondeu todas as questões ao menos uma vez. O ranking não mostra acertos nem erros.</p>';
+    el.innerHTML = `<p style="margin-top:0">Você já fez <b>${mine}</b> simulado(s).</p>` + (rows.length ? `<table><tr><th>#</th><th>Apelido</th><th class="n">Simulados feitos</th></tr>${rows.map((r, i) => `<tr${r.eu ? ' style="font-weight:700"' : ''}><td>${i + 1}</td><td>${esc(r.name)}${r.eu ? ' <span class="small mut">(você)</span>' : ''}</td><td class="n">${esc(r.simulados)}</td></tr>`).join('')}</table>` : '<span class="mut">Ninguém terminou um simulado ainda.</span>') + '<p class="small mut">Conta como feito o simulado em que você respondeu todas as questões ao menos uma vez. O ranking não mostra acertos nem erros.</p>';
   } catch (e) { const el = document.getElementById('lb'); if (el) el.textContent = 'Não foi possível carregar o ranking: ' + e.message; }
 }
 
@@ -677,6 +683,7 @@ $app.addEventListener('submit', async e => {
   try {
     if (f === 'login') { await Cloud.login(document.getElementById('lu').value.trim(), document.getElementById('lp').value); await afterLogin(); }
     else if (f === 'register') { await Cloud.register(document.getElementById('ru').value.trim(), document.getElementById('rp').value, document.getElementById('ri').value.trim()); toast('Cadastro criado! Bem-vindo(a).'); await afterLogin(); }
+    else if (f === 'nick') { const r = await Cloud.rpc('app_set_display_name', { p_token: Cloud.token, p_name: document.getElementById('nk').value }); Cloud.setDisplay(r && r.display_name); toast('Apelido salvo: ' + strOf(r && r.display_name, 24)); viewAccount(); }
     else if (f === 'chpw') { await Cloud.rpc('app_change_password', { p_token: Cloud.token, p_old: document.getElementById('op').value, p_new: document.getElementById('np').value }); toast('Senha alterada.'); e.target.reset(); }
   } catch (er) { toast(er.message, 5000); }
   if (btn) btn.disabled = false;
@@ -689,7 +696,7 @@ async function importProgress(file) {
     if (!b64) { toast('Este PDF não foi exportado pelo app (não encontrei os dados de progresso).', 6000); return; }
     const d = await ProgressPdf.decode(b64);
     if (!d || d.v !== 1 || !Array.isArray(d.a)) throw new Error('formato');
-    if (d.user && Cloud.username && d.user !== Cloud.username && !confirm('Este PDF é do usuário "' + d.user + '". Somar as respostas dele ao seu progresso?')) return;
+    if (d.user && Cloud.username && d.user !== Cloud.display && d.user !== Cloud.username && !confirm('Este PDF é de "' + strOf(d.user, 40) + '". Somar as respostas dele ao seu progresso?')) return;
     const have = new Set(answers.map(a => a.ts + '|' + a.qid)); let n = 0;
     const NOW = Date.now() + 86400000;
     d.a.slice(0, 200000).forEach(r => {   // valida cada linha: o PDF pode ter sido alterado ou vir de outra pessoa
@@ -751,7 +758,7 @@ $app.addEventListener('click', async e => {
     case 'export-progress': {
       if (!answers.length) { toast('Você ainda não respondeu nenhuma questão.'); break; }
       toast('Gerando o PDF…');
-      try { const R = computeReport(); saveSnapshot(R.generatedAt); R.history = historyRows(); R.reports = reports.slice(); const blob = await ProgressPdf.build(R, who()); download('progresso-pmsc-' + who() + '-' + new Date().toISOString().slice(0, 10) + '.pdf', blob); toast('PDF gerado em ' + fmtDT(R.generatedAt) + ' e salvo no histórico de relatórios.', 5000); if (location.hash === '#/relatorio') viewReport(); }
+      try { const R = computeReport(); saveSnapshot(R.generatedAt); R.history = historyRows(); R.reports = reports.slice(); const blob = await ProgressPdf.build(R, who()); download('progresso-pmsc-' + who().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9_-]+/g, '-') + '-' + new Date().toISOString().slice(0, 10) + '.pdf', blob); toast('PDF gerado em ' + fmtDT(R.generatedAt) + ' e salvo no histórico de relatórios.', 5000); if (location.hash === '#/relatorio') viewReport(); }
       catch (er) { toast('Não consegui gerar o PDF: ' + er.message, 6000); } break;
     }
     case 'save-report': { const before = reports.length; saveSnapshot(); toast(reports.length > before ? 'Relatório salvo em ' + fmtDT(reports[reports.length - 1]) + '.' : 'Já existe um relatório salvo neste minuto.'); cmpBase = null; viewReport(); break; }
